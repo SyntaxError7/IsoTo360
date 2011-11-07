@@ -1,4 +1,0 @@
-user variables set 
-paths set 
-Extracting Battlefield.3.Disc.2-XPG.iso to HDD1/games//"kjh kjh kjh " 
-Process finished. 

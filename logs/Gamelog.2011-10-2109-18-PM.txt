@@ -1,3 +1,0 @@
-user variables set 
-paths set 
-Making games directory on 360 via ftp 
