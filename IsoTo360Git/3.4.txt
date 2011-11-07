@@ -1,0 +1,2 @@
+startLoc now working
+updated to use XGD3 exiso.exe

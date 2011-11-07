@@ -1,0 +1,4 @@
+user variables set 
+paths set 
+Making games directory on 360 via ftp 
+Extracting Battlefield.3.Disc.2-XPG.iso to HDD1/games//bf3 

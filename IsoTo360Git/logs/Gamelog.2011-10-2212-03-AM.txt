@@ -1,0 +1,6 @@
+user variables set 
+paths set 
+Starting rar extraction 
+Extracting ISO from rar archive 
+Extracting  to HDD1/games//bf3_d1 
+Process finished. 

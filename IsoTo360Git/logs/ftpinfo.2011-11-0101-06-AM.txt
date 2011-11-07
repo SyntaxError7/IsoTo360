@@ -1,0 +1,6 @@
+open 192.168.2.51 
+xbox
+xbox
+cd HDD1/games/ 
+close 
+quit 
