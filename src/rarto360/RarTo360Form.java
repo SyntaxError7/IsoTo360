@@ -84,6 +84,9 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
     long totalSize = 0;
     String extractionPath = "";
 
+    
+    private ExtendedSwingWorker.ProgressUpdateListener progressUpdateListener;
+    
     /** Creates new form RarTo360Form */
     public RarTo360Form() {
 
@@ -93,9 +96,32 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         setButtons();
         setConfig();
         repaint();
-        
-        redirectSystemStreams();
 
+        /**
+         * Create the progress update listener, which will be used for all the workers
+         */
+        progressUpdateListener = new ExtendedSwingWorker.ProgressUpdateListener() {
+
+            @Override
+            public void onButtonsEnabled() {
+                enableButtons();
+            }
+
+            @Override
+            public void onButtonsDisabled() {
+                disableButtons();
+            }
+
+            @Override
+            public void onCommandLineUpdated(String line) {
+                updateTextArea(line);
+            }
+
+            @Override
+            public void onStatusLabelChanged(String label) {
+                statusLbl.setText(label);
+            }
+        };
     }
 
     public static List getQueueListing() {
@@ -366,9 +392,6 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
             this.gameNameTxt.setText("");
             statusLbl.setText(gameName + " added to queue (ISO).");
         }
-
-
-
     }
 
     private void RunRarBatch(boolean batchBool) {
@@ -684,38 +707,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             long isoSize = getIsoSize(isoPathAndName);
 
 
-
-//            int i = 0;
-
-
-//            while ((s = stdInput.readLine()) != null) {
-//
-//                if (i > 5) {
-//
-//                    i = 0;
-//                    long destSize = getFolderSize(destFolder);
-//                    float percentage = (((float) destSize / (float) isoSize) * 100);
-//                    double newNum = Math.round(percentage * 100.0) / 100.0;
-//
-//                    pctComplete.setText("Overall Progress: " + newNum + "% (Approx: " + (destSize / 1000000) + " MB out of " + (isoSize / 1000000) + " MB)");
-//                    outputLbl.setText(s);
-//                    statusLbl.repaint();
-//                    outputLbl.repaint();
-//
-//                } else {
-//                    i++;
-//                }
-//
-//
-//
-//
-//
-//            }
-//            System.out.println("Here is the standard error of the command (if any):\n");
-//            while ((s = stdError.readLine()) != null) {
-//                System.out.println(s);
-//            }
-
             return p;
 
         } catch (IOException ex) {
@@ -962,29 +953,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         String commandString = "exiso.exe -d " + extractTo + " -s " + isoPathAndName;
         setExisoCmd(commandString);
 
-        class IsoToDiscClass extends SwingWorker<Process, Object> {
-
-            @Override
-            public Process doInBackground() throws InterruptedException {
-                return doExisoLocal();
-
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    statusLbl.setText("Status: Ready.");
-                    //pctComplete.setText("Finished Extracting.");
-                    //outputLbl.setText("");
-                    enableButtons();
-
-                } catch (Exception ignore) {
-                }
-            }
-        }
-
-        (new IsoToDiscClass()).execute();
-
+        new IsoExtractWorker(progressUpdateListener, getExisoCmd()).execute();
     }
 
     public void makeExtractDir(String extractDir) throws IOException {
@@ -1111,30 +1080,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     });
   }
 
-  private void redirectSystemStreams() {
-    OutputStream out = new OutputStream() {
-      @Override
-      public void write(int b) throws IOException {
-        updateTextArea(String.valueOf((char) b));
-      }
-
-      @Override
-      public void write(byte[] b, int off, int len) throws IOException {
-        updateTextArea(new String(b, off, len));
-      }
-
-      @Override
-      public void write(byte[] b) throws IOException {
-        write(b, 0, b.length);
-      }
-    };
-
-    System.setOut(new PrintStream(out, true));
-    System.setErr(new PrintStream(out, true));
-  }
-
-    
-    
 	
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
