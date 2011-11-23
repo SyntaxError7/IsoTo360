@@ -62,6 +62,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
 
     static List<String> jobQueueDescription = new ArrayList();
     List<String[]> jobQueue = new ArrayList<String[]>();
+    List<String> jobQueueString = new ArrayList<String>();
     Properties config = new Properties();
     String workingDir, batDir = "";
     String IsoNameNoExt = "";
@@ -74,7 +75,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
     int IsoRarSelection = 0;
     JRadioButton button1 = new JRadioButton("Rar");
     JRadioButton button2 = new JRadioButton("ISO");
-    String gameDir, gameName, ipAddy, rarIsoDir, isoName, appDir = "";
+    String gameDir, gameName, ipAddy, rarIsoDir, isoName, appDir, extractDir, gameDirTxtStr, dirToExt= "";
     File curDir;
     String[] cmdString = null;
     String exisoCmd = "";
@@ -223,7 +224,15 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
                 IsoToFTPLocal(false, localChooser.getCurrentDirectory());
             } else {
                 try {
-                    IsoToFTP(false);
+                    
+                    extractDir = gameDirTxt.getText();
+                    gameName = gameNameTxt.getText();
+                    isoName = chooser.getName(chooser.getSelectedFile());
+                    IsoNameNoExt = isoName.substring(0, (isoName.length() - 4));
+                    curDir = chooser.getCurrentDirectory();
+                    gameDirTxtStr = gameDirTxt.getText();
+
+                    IsoToFTP runIsoToFTP = new IsoToFTP(false);
                 } catch (SocketException ex) {
                     Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
                 } catch (IOException ex) {
@@ -250,6 +259,51 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
 
     }
 
+    private void IsoToDiscBatch(String extractDir, String gameName, String isoDir, String isoName, String workingDir) throws IOException 
+    {
+
+        
+        String extractTo = extractDir + "\\" + gameName;
+        isoPathAndName = isoDir + "\\" + isoName;
+
+        if (extractTo.contains(" ")) {
+            extractTo = "\"" + extractTo + "\"";
+        }
+        if (isoPathAndName.contains(" ")) {
+            isoPathAndName = "\"" + isoPathAndName + "\"";
+        }
+
+        setIsoPathAndName(isoPathAndName);
+        setExtractionPath(extractTo);
+
+        makeExtractDir(extractTo);
+
+        //String commandString = workingDir + "\\exiso.exe -d " + extractTo + " -s " + isoPathAndName;
+        String commandString = "exiso.exe -d " + extractTo + " -s " + isoPathAndName;
+        addJob(commandString);
+        //setExisoCmd(commandString);
+        
+        
+        //(new IsoToDiscClass()).execute();
+        
+        
+        
+        //         String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir, dirToExt};
+        //         jobQueue.add(commands);
+        //         jobQueueDescription.add("ISO: " + gameName);
+        //         this.gameNameTxt.setText("");
+        //         statusLbl.setText(gameName + " added to queue (ISO).");
+        
+    }
+    
+    private void addJob(String command)
+    {
+        
+        jobQueueString.add(command);
+        jTextOutput.setText("Command: " + command + " added to queue.");
+        
+    }
+    
     private void IsoToFTPLocal(boolean batchBool, File extDir) {
         //localExtractChkBxItemStateChanged
         isoName = chooser.getName(chooser.getSelectedFile());
@@ -258,160 +312,25 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
 
         setVariables();
         rarIsoDir = curDir.toString();
-        String dirToExt = extDir.toString();
+        dirToExt = extDir.toString();
         //dirToExt = "\"" + dirToExt + "\"";
 
         checkForSpaces();
         try {
-            IsoToDisc(dirToExt, gameName, rarIsoDir, isoName, workingDir);
+            
+            if (batchBool == false){
+            IsoToDisc runIsoToDisc = new IsoToDisc(dirToExt, gameName, rarIsoDir, isoName, workingDir);
+            }
+            else{
+            IsoToDiscBatch(dirToExt, gameName, rarIsoDir, isoName, workingDir);
+            }
         } catch (IOException ex) {
             Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-
-        //        
-        //
-        //        if (batchBool == false)
-        //        {
-        //        Process pr = null;
-        //
-        //        java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-        //        
-        //        try {
-        //            
-        //            Process p = Runtime.getRuntime().exec("cmd mkdir w:\\Extracted\\abc");
-        //            
-        //            pr = rt.exec("cmd mkdir w:\\Extracted\\abc");
-        //            pr = rt.exec("mkdir " + dirToExt + "\\" + gameName);
-        //            pr = rt.exec(workingDir + "\\exiso.exe -d " + dirToExt + "\"" + gameName + " -s " + rarIsoDir + "\"" + isoName);
-        //            pr = rt.exec("cd ..");
-        //            
-        //        }
-        //        catch (IOException ex) {
-        //           Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-        //       }
-
-        //        if (batchBool == false)
-        //        {
-        //        Process pr = null;
-        //
-        //        java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-        //        String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir, dirToExt};
-        //        try {
-        //            pr = rt.exec(commands);
-        //
-        //       } catch (IOException ex) {
-        //            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-        //        }
-        //        try {
-        //            pr.waitFor();
-        //            statusLbl.setText("Status: Processing " + gameName + " finished.");
-        //        } catch (InterruptedException ex) {
-        //            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-        //        }
-        //        }
-        // else
-        //        {
-        //         String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir, dirToExt};
-        //         jobQueue.add(commands);
-        //         jobQueueDescription.add("ISO: " + gameName);
-        //         this.gameNameTxt.setText("");
-        //         statusLbl.setText(gameName + " added to queue (ISO).");
-        // }
-        //
-//            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-
-
-    }
-
-    private void RunRarBatchLocal(boolean batchBool, File extDir) {
-
-        // localExtractChkBxItemStateChanged
-        rarName = chooser.getName(chooser.getSelectedFile());
-        rarNameNoExt = rarName.substring(0, (rarName.length() - 4));
-        curDir = localChooser.getCurrentDirectory();
-        setVariables();
-        rarIsoDir = curDir.toString();
-
-        String dirToExt = extDir.toString();
-        dirToExt = "\"" + dirToExt + "\"";
-
-
-
-        checkForSpaces();
-        workingDir = "\"" + workingDir + "\"";
-
-        if (batchBool == false) {
-            Process pr = null;
-
-            java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\RarToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt, dirToExt};
-            try {
-                pr = rt.exec(commands);
-
-            } catch (IOException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            try {
-                pr.waitFor();
-                statusLbl.setText("Status: Processing " + gameName + " finished.");
-            } catch (InterruptedException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else {
-            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\RarToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt, dirToExt};
-            jobQueue.add(commands);
-            jobQueueDescription.add("ISO: " + gameName);
-            this.gameNameTxt.setText("");
-            statusLbl.setText(gameName + " added to queue (ISO).");
-        }
-
-
-
-    }
-
-    private void RunRarBatch(boolean batchBool) {
-
-        rarName = chooser.getName(chooser.getSelectedFile());
-        rarNameNoExt = rarName.substring(0, (rarName.length() - 4));
-        curDir = chooser.getCurrentDirectory();
-        setVariables();
-        rarIsoDir = curDir.toString();
-
-        checkForSpaces();
-        workingDir = "\"" + workingDir + "\"";
-
-        if (batchBool == false) {
-
-            Process pr = null;
-            // statusLbl.setText("Status: Processing started on " + this.gameNameTxt.getText() + ", see command window for progress.");
-            java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-            String[] commands = {"cmd.exe", "/c", "start/wait", workingDir, "batchFiles\\RarTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt};
-            try {
-                pr = rt.exec(commands);
-
-            } catch (IOException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            try {
-                pr.waitFor();
-                statusLbl.setText("Status: Processing " + gameName + " finished.");
-            } catch (InterruptedException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        } else // add to batch list...
-        {
-            String[] commands = {"cmd.exe", "/c", "start/wait", workingDir, "batchFiles\\RarTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt};
-            jobQueue.add(commands);
-            jobQueueDescription.add("RAR: " + gameName);
-            this.gameNameTxt.setText("");
-            statusLbl.setText(gameName + " added to queue (Rar).");
-        }
-
+        
     }//GEN-LAST:event_startXferBtnActionPerformed
 
+    
     private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
         try {
             Runtime.getRuntime().exec("cmd.exe /c start http://forums.xbox-scene.com/index.php?showtopic=737562");
@@ -424,27 +343,18 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
 
         if (!this.gameNameTxt.getText().isEmpty()) {
 
-            if (IsoRarSelection == 1) {
-                if (localExtractChkBx.getState() == true) {
-                    RunRarBatchLocal(true, localChooser.getSelectedFile());
-                } else {
-                    RunRarBatch(true);
-                }
-            } else if (IsoRarSelection == 2) {
                 if (localExtractChkBx.getState() == true) {
                     IsoToFTPLocal(true, localChooser.getSelectedFile());
                 } else {
                     try {
-                        IsoToFTP(true);
+                        IsoToFTP runIsoToFTP = new IsoToFTP(true);
                     } catch (SocketException ex) {
                         Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
                     } catch (IOException ex) {
                         Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
-            } else {
-                statusLbl.setText("Please select a file type.");
-            }
+           
         } else {
             statusLbl.setText("Please enter a game name");
         }
@@ -647,83 +557,11 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     }
 
     // CODED
-    public Process doExisoLocal() throws InterruptedException {
-        try {
-
-            String[] command = new String[3];
-            command[0] = "cmd";
-            command[1] = "/C";
-            command[2] = getExisoCmd();
-
-            String commandString = getExisoCmd();
-            
-            disableButtons();
-            // Process p = Runtime.getRuntime().exec("cmd.exe /c start " + commandString);
-            Process p = Runtime.getRuntime().exec("cmd.exe /c " + commandString);
-
-            String line;
-
-            BufferedReader input =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()));
-            while ((line = input.readLine()) != null) {
-                System.out.println(line);
-            }
-            input.close();
-            
-//            
-//           
-//            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-//            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            
-            
-
-            String s = null;
-            statusLbl.setText("Processing ISO, please wait...");
-
-            String destFolder = getExtractionPath();
-            long isoSize = getIsoSize(isoPathAndName);
-
-
-
-//            int i = 0;
-
-
-//            while ((s = stdInput.readLine()) != null) {
-//
-//                if (i > 5) {
-//
-//                    i = 0;
-//                    long destSize = getFolderSize(destFolder);
-//                    float percentage = (((float) destSize / (float) isoSize) * 100);
-//                    double newNum = Math.round(percentage * 100.0) / 100.0;
-//
-//                    pctComplete.setText("Overall Progress: " + newNum + "% (Approx: " + (destSize / 1000000) + " MB out of " + (isoSize / 1000000) + " MB)");
-//                    outputLbl.setText(s);
-//                    statusLbl.repaint();
-//                    outputLbl.repaint();
-//
-//                } else {
-//                    i++;
-//                }
-//
-//
-//
-//
-//
-//            }
-//            System.out.println("Here is the standard error of the command (if any):\n");
-//            while ((s = stdError.readLine()) != null) {
-//                System.out.println(s);
-//            }
-
-            return p;
-
-        } catch (IOException ex) {
-            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
-
-    }
+    
+    
+          
+    
+  
 
     public Process doExisoFTP() {
         try {
@@ -798,10 +636,13 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         //startBatchQueueBtn.setEnabled(true);
         //clearQBtn.setEnabled(true);
 
-
-
     }
 
+    
+    public void statusReady()
+    {
+        statusLbl.setText("Status: Ready.");
+    }
     public void disableButtons() {
 
         selectIsoBtn.setEnabled(false);
@@ -820,173 +661,13 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
     }
 
-    private void IsoToFTP(boolean batchBool) throws SocketException, IOException {
-
-        ipAddy = ipAddyTxt.getText();
-        String extractDir = gameDirTxt.getText();
-        gameName = gameNameTxt.getText();
-        isoName = chooser.getName(chooser.getSelectedFile());
-        IsoNameNoExt = isoName.substring(0, (isoName.length() - 4));
-        curDir = chooser.getCurrentDirectory();
 
 
-        String extractTo = extractDir + gameName;
-        isoPathAndName = curDir + "\\" + isoName;
+   
 
-        if (extractTo.contains(" ")) {
-            extractTo = "\"" + extractTo + "\"";
-        }
-        if (isoPathAndName.contains(" ")) {
-            isoPathAndName = "\"" + isoPathAndName + "\"";
-        }
-
-        setIsoPathAndName(isoPathAndName);
-        setExtractionPath(extractTo);
-
-        String extractDirToRename = gameDirTxt.getText() + IsoNameNoExt;
-        String extractDirRenameTo = extractTo;
-        extractDirRenameTo = extractDirRenameTo.replaceAll("\"", "");
-
-        disableButtons();
-
-//        if (extractDirToRename.contains(" ")) {
-//            extractDirToRename = "\"" + extractDirToRename + "\"";
-//        }
-//        if (extractDirRenameTo.contains(" ")) {
-//            extractDirRenameTo = "\"" + extractDirRenameTo + "\"";
-//        }        
-
-        final String extractDirToRenameFinal = extractDirToRename;
-        final String extractDirRenameToFinal = extractDirRenameTo;
-
-
-
-        // Create Directory on 360...
-//        FTPClient ftp = new FTPClient();
-//        ftp.connect(ipAddy);
-//        ftp.login("xbox","xbox");
-//        ftp.mkd(extractDirToRename);
-//        ftp.disconnect();
-
-        setExisoCmd("exiso -d " + extractDir + " -f " + ipAddy + " -s " + isoPathAndName);
-
-        class IsoTo360Class extends SwingWorker<Process, Object> {
-
-            @Override
-            public Process doInBackground() {
-                return doExisoFTP();
-
-            }
-
-            @Override
-            protected void done() {
-                try {
-
-                    statusLbl.setText("Status: Ready.");
-                    //pctComplete.setText("Process Complete.");
-                    //outputLbl.setText("");
-                    FTPClient ftp = new FTPClient();
-                    ftp.connect(ipAddy);
-                    ftp.login("xbox", "xbox");
-                    ftp.rename(extractDirToRenameFinal.toLowerCase(), extractDirRenameToFinal.toLowerCase());
-                    ftp.disconnect();
-
-                    enableButtons();
-
-
-
-
-                } catch (Exception ignore) {
-                }
-            }
-        }
-
-        (new IsoTo360Class()).execute();
-
-
-
-
-
-
-//            Process pr = null;
-//
-//            java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-//            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir};
-//            try {
-//                pr = rt.exec(commands);
-//
-//            } catch (IOException ex) {
-//                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//            try {
-//                pr.waitFor();
-//                statusLbl.setText("Status: Processing " + gameName + " finished.");
-//            } catch (InterruptedException ex) {
-//                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        } else {
-//            
-// 
-//            
-//            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir};
-//            jobQueue.add(commands);
-//            jobQueueDescription.add("ISO: " + gameName);
-//            this.gameNameTxt.setText("");
-//            statusLbl.setText(gameName + " added to queue (ISO).");
-//        }
-
-    }
-
-    public void IsoToDisc(String extractDir, String gameName, String isoDir, String isoName, String workingDir) throws IOException {
-
-
-
-        String extractTo = extractDir + "\\" + gameName;
-        String isoPathAndName = isoDir + "\\" + isoName;
-
-        if (extractTo.contains(" ")) {
-            extractTo = "\"" + extractTo + "\"";
-        }
-        if (isoPathAndName.contains(" ")) {
-            isoPathAndName = "\"" + isoPathAndName + "\"";
-        }
-
-        setIsoPathAndName(isoPathAndName);
-        setExtractionPath(extractTo);
-
-        makeExtractDir(extractTo);
-
-
-
-        //String commandString = workingDir + "\\exiso.exe -d " + extractTo + " -s " + isoPathAndName;
-        String commandString = "exiso.exe -d " + extractTo + " -s " + isoPathAndName;
-        setExisoCmd(commandString);
-
-        class IsoToDiscClass extends SwingWorker<Process, Object> {
-
-            @Override
-            public Process doInBackground() throws InterruptedException {
-                return doExisoLocal();
-
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    statusLbl.setText("Status: Ready.");
-                    //pctComplete.setText("Finished Extracting.");
-                    //outputLbl.setText("");
-                    enableButtons();
-
-                } catch (Exception ignore) {
-                }
-            }
-        }
-
-        (new IsoToDiscClass()).execute();
-
-    }
-
+        
+        
+        
     public void makeExtractDir(String extractDir) throws IOException {
 
 
@@ -1103,7 +784,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     
     // Output Exiso to Text:
     
-    private void updateTextArea(final String text) {
+    public void updateTextArea(final String text) {
     SwingUtilities.invokeLater(new Runnable() {
       public void run() {
         jTextOutput.append(text);
@@ -1111,7 +792,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     });
   }
 
-  private void redirectSystemStreams() {
+  public void redirectSystemStreams() {
     OutputStream out = new OutputStream() {
       @Override
       public void write(int b) throws IOException {
@@ -1133,6 +814,10 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     System.setErr(new PrintStream(out, true));
   }
 
+  public void setStatus(String stat)
+  {
+      statusLbl.setText(stat);
+  }
     
     
 	
@@ -1204,7 +889,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             }
         });
 
-        defaultlExtractChkBx.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
+        defaultlExtractChkBx.setFont(new java.awt.Font("Tahoma", 0, 11));
         defaultlExtractChkBx.setLabel("Extract to default directory?");
         defaultlExtractChkBx.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
@@ -1217,7 +902,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             }
         });
 
-        localExtractChkBx.setFont(new java.awt.Font("Tahoma", 0, 11)); // NOI18N
+        localExtractChkBx.setFont(new java.awt.Font("Tahoma", 0, 11));
         localExtractChkBx.setLabel("Extract to local directory?");
         localExtractChkBx.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
@@ -1309,7 +994,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         });
 
         addToQueueBtn.setText("Add To Queue");
-        addToQueueBtn.setEnabled(false);
         addToQueueBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 addToQueueBtnActionPerformed(evt);
@@ -1392,9 +1076,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 804, Short.MAX_VALUE))
                     .addComponent(pctLbl, javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(percentLbl, javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.LEADING)
@@ -1405,7 +1086,10 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
                             .addGroup(layout.createSequentialGroup()
                                 .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGap(6, 6, 6)
-                                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                        .addContainerGap()
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 794, javax.swing.GroupLayout.PREFERRED_SIZE)))
                 .addContainerGap())
         );
         layout.setVerticalGroup(
