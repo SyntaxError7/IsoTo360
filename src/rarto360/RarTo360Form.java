@@ -26,82 +26,71 @@
 
 package rarto360;
 
-import java.net.SocketException;
-import org.apache.commons.io.FileUtils;
+import org.apache.commons.net.ftp.FTPClient;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.*;
 import java.util.ArrayList;
-
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ButtonGroup;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JFileChooser;
-import javax.swing.JFrame;
-import javax.swing.JRadioButton;
-import javax.swing.SwingUtilities;
-import javax.swing.SwingWorker;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import org.apache.commons.net.ftp.FTPClient;
 
 public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
 
-    static List<String> jobQueueDescription = new ArrayList();
-    List<String[]> jobQueue = new ArrayList<String[]>();
-    Properties config = new Properties();
-    String workingDir, batDir = "";
-    String IsoNameNoExt = "";
-    String rarNameNoExt, rarName = "";
-    String startLoc = "";
-    String extractLoc = "";
-    JFileChooser chooser;
-    JFileChooser fileChooser;
-    JFileChooser localChooser;
-    int IsoRarSelection = 0;
-    JRadioButton button1 = new JRadioButton("Rar");
-    JRadioButton button2 = new JRadioButton("ISO");
-    String gameDir, gameName, ipAddy, rarIsoDir, isoName, appDir = "";
-    File curDir;
-    String[] cmdString = null;
-    String exisoCmd = "";
-    String progressLine = "";
-    Boolean isoSelected = false;
-    String isoPathAndName = "";
-    long totalSize = 0;
-    String extractionPath = "";
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
+    private static final List<String> jobQueueDescription = new ArrayList<String>();
+    private final List<String[]> jobQueue = new ArrayList<String[]>();
+    private final Properties config = new Properties();
+    private String workingDir, batDir = "";
+    private String isoNameNoExt = "";
+    private String rarNameNoExt, rarName = "";
+    private String startLoc = "";
+    private String extractLoc = "";
+    private JFileChooser chooser;
+    private JFileChooser localChooser;
+    private int IsoRarSelection = 0;
 
-    
+    private final JRadioButton button1 = new JRadioButton("Rar");
+    private final JRadioButton button2 = new JRadioButton("ISO");
+
+    private String gameDir;
+    private String gameName;
+    private String ipAddy;
+    private String rarIsoDir;
+    private String isoName;
+
+    private File curDir;
+    private String exisoCmd = "";
+
+    private Boolean isoSelected = false;
+    private String isoPathAndName = "";
+
     private ExtendedSwingWorker.ProgressUpdateListener progressUpdateListener;
-    
-    /** Creates new form RarTo360Form */
-    public RarTo360Form() {
 
+    /**
+     * Creates new form RarTo360Form
+     */
+    public RarTo360Form() {
         initComponents();
         selectIsoBtn.setVisible(true);
 
         setButtons();
         setConfig();
         repaint();
+        setProgressUpdateListener();
+    }
 
-        /**
-         * Create the progress update listener, which will be used for all the workers
-         */
+    /**
+     * Create the progress update listener, which will be used for all the workers
+     */
+    private void setProgressUpdateListener() {
         progressUpdateListener = new ExtendedSwingWorker.ProgressUpdateListener() {
-
             @Override
             public void onButtonsEnabled() {
                 enableButtons();
@@ -119,13 +108,9 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
 
             @Override
             public void onStatusLabelChanged(String label) {
-                statusLbl.setText(label);
+                setStatusBarText(label);
             }
         };
-    }
-
-    public static List getQueueListing() {
-        return jobQueueDescription;
     }
 
     private void setButtons() {
@@ -145,7 +130,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         if (evt.getSource() == button1) {
             selectIsoBtn.setVisible(true);
             selectIsoBtn.setText("Select Rar File");
-            statusLbl.setText("Status: Use browser to select the archive to extract and transfer.");
+            setStatusBarText(LocalizeFromResource.getString(this, "rarSelectedStatusLabel"));
             IsoRarSelection = 1;
         }
 
@@ -176,110 +161,51 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
 
     }
 
-    private void gameNameTxtActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_gameNameTxtActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_gameNameTxtActionPerformed
-
-    private void selectRAR() {
-        JButton go;
-        String choosertitle = "";
-
-
-        chooser = new JFileChooser(startLoc);
-        //chooser.setCurrentDirectory(new java.io.File("."));
-        chooser.setDialogTitle(choosertitle);
-
-
-        if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            RarTo360Form.this.statusLbl.setText(chooser.getSelectedFile().toString());
-            if (this.gameNameTxt.getText().equals("")) {
-                statusLbl.setText("Status: RAR Selected, Enter a game name.");
-            } else {
-                statusLbl.setText("Status: RAR Selected, begin transfer or add to queue.");
-            }
-        }
-
-    }
-
     private void selectISO() {
-
-        String choosertitle = "";
-
-
+        String chooserTitle = "";
 
         FileFilter filter = new FileNameExtensionFilter("ISO file", "iso");
         chooser = new JFileChooser(startLoc);
         chooser.addChoosableFileFilter(filter);
         chooser.setFileFilter(filter);
-        chooser.setDialogTitle(choosertitle);
+        chooser.setDialogTitle(chooserTitle);
 
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            statusLbl.setText(chooser.getSelectedFile().toString());
+            setStatusBarText(chooser.getSelectedFile().toString());
             isoSelected = true;
             if (this.gameNameTxt.getText().equals("")) {
-                statusLbl.setText("Status: ISO Selected, enter a game name.");
+                setStatusBarText("Status: ISO Selected, enter a game name.");
             } else {
-                statusLbl.setText("Status: ISO Selected, ready to extract.");
+                setStatusBarText("Status: ISO Selected, ready to extract.");
             }
         }
 
 
-
     }
-    private void gameDirTxtActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_gameDirTxtActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_gameDirTxtActionPerformed
 
-    private void ipAddyTxtActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ipAddyTxtActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_ipAddyTxtActionPerformed
-
-    private void startXferBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startXferBtnActionPerformed
+    private void startXferBtnActionPerformed() {//GEN-FIRST:event_startXferBtnActionPerformed
 
         if (this.gameNameTxt.getText().equals("")) {
-            statusLbl.setText("Please enter a game name.");
+            setStatusBarText("Please enter a game name.");
             this.gameNameTxt.requestFocusInWindow();
         } else {
-
-            if (isoSelected == false) {
-                statusLbl.setText("Status:Please choose an ISO to extract or transfer");
-            } else if (localExtractChkBx.getState() == true) {
-                IsoToFTPLocal(false, localChooser.getSelectedFile());
-            } else if (defaultlExtractChkBx.getState() == true) {
-                IsoToFTPLocal(false, localChooser.getCurrentDirectory());
+            if (!isoSelected) {
+                setStatusBarText("Status:Please choose an ISO to extract or transfer");
+            } else if (localExtractChkBx.getState()) {
+                IsoToFTPLocal(localChooser.getSelectedFile());
+            } else if (defaultlExtractChkBx.getState()) {
+                IsoToFTPLocal(localChooser.getCurrentDirectory());
             } else {
-                try {
-                    IsoToFTP(false);
-                } catch (SocketException ex) {
-                    Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-                } catch (IOException ex) {
-                    Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                IsoToFTP();
             }
-
-
-
-//            } else if (IsoRarSelection == 1) {
-//                if (isoSelected == true) {
-//                    RunRarBatchLocal(false, localChooser.getSelectedFile());
-//                } else {
-//                    RunRarBatch(false);
-//                }
-//            } else if (IsoRarSelection == 2) {
-//                if (localExtractChkBx.getState() == true) {
-//                    IsoToFTPLocal(false, localChooser.getSelectedFile());
-//                } else {
-//                    IsoToFTP(false);
-//                }
-//            }
         }
 
     }
 
-    private void IsoToFTPLocal(boolean batchBool, File extDir) {
+    private void IsoToFTPLocal(File extDir) {
         //localExtractChkBxItemStateChanged
         isoName = chooser.getName(chooser.getSelectedFile());
-        IsoNameNoExt = isoName.substring(0, (isoName.length() - 4));
+        isoNameNoExt = isoName.substring(0, (isoName.length() - 4));
         curDir = chooser.getCurrentDirectory();
 
         setVariables();
@@ -287,71 +213,14 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         String dirToExt = extDir.toString();
         //dirToExt = "\"" + dirToExt + "\"";
 
-        checkForSpaces();
         try {
-            IsoToDisc(dirToExt, gameName, rarIsoDir, isoName, workingDir);
+            IsoToDisc(dirToExt, gameName, rarIsoDir, isoName);
         } catch (IOException ex) {
             Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-
-        //        
-        //
-        //        if (batchBool == false)
-        //        {
-        //        Process pr = null;
-        //
-        //        java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-        //        
-        //        try {
-        //            
-        //            Process p = Runtime.getRuntime().exec("cmd mkdir w:\\Extracted\\abc");
-        //            
-        //            pr = rt.exec("cmd mkdir w:\\Extracted\\abc");
-        //            pr = rt.exec("mkdir " + dirToExt + "\\" + gameName);
-        //            pr = rt.exec(workingDir + "\\exiso.exe -d " + dirToExt + "\"" + gameName + " -s " + rarIsoDir + "\"" + isoName);
-        //            pr = rt.exec("cd ..");
-        //            
-        //        }
-        //        catch (IOException ex) {
-        //           Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-        //       }
-
-        //        if (batchBool == false)
-        //        {
-        //        Process pr = null;
-        //
-        //        java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-        //        String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir, dirToExt};
-        //        try {
-        //            pr = rt.exec(commands);
-        //
-        //       } catch (IOException ex) {
-        //            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-        //        }
-        //        try {
-        //            pr.waitFor();
-        //            statusLbl.setText("Status: Processing " + gameName + " finished.");
-        //        } catch (InterruptedException ex) {
-        //            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-        //        }
-        //        }
-        // else
-        //        {
-        //         String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir, dirToExt};
-        //         jobQueue.add(commands);
-        //         jobQueueDescription.add("ISO: " + gameName);
-        //         this.gameNameTxt.setText("");
-        //         statusLbl.setText(gameName + " added to queue (ISO).");
-        // }
-        //
-//            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-
-
     }
 
-    private void RunRarBatchLocal(boolean batchBool, File extDir) {
+    private void RunRarBatchLocal(File extDir) {
 
         // localExtractChkBxItemStateChanged
         rarName = chooser.getName(chooser.getSelectedFile());
@@ -364,37 +233,16 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         dirToExt = "\"" + dirToExt + "\"";
 
 
-
-        checkForSpaces();
         workingDir = "\"" + workingDir + "\"";
 
-        if (batchBool == false) {
-            Process pr = null;
-
-            java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\RarToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt, dirToExt};
-            try {
-                pr = rt.exec(commands);
-
-            } catch (IOException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            try {
-                pr.waitFor();
-                statusLbl.setText("Status: Processing " + gameName + " finished.");
-            } catch (InterruptedException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } else {
-            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\RarToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt, dirToExt};
-            jobQueue.add(commands);
-            jobQueueDescription.add("ISO: " + gameName);
-            this.gameNameTxt.setText("");
-            statusLbl.setText(gameName + " added to queue (ISO).");
-        }
+        String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\RarToDisc.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt, dirToExt};
+        jobQueue.add(commands);
+        jobQueueDescription.add("ISO: " + gameName);
+        this.gameNameTxt.setText("");
+        setStatusBarText(gameName + " added to queue (ISO).");
     }
 
-    private void RunRarBatch(boolean batchBool) {
+    private void RunRarBatch() {
 
         rarName = chooser.getName(chooser.getSelectedFile());
         rarNameNoExt = rarName.substring(0, (rarName.length() - 4));
@@ -402,40 +250,17 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         setVariables();
         rarIsoDir = curDir.toString();
 
-        checkForSpaces();
         workingDir = "\"" + workingDir + "\"";
 
-        if (batchBool == false) {
-
-            Process pr = null;
-            // statusLbl.setText("Status: Processing started on " + this.gameNameTxt.getText() + ", see command window for progress.");
-            java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-            String[] commands = {"cmd.exe", "/c", "start/wait", workingDir, "batchFiles\\RarTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt};
-            try {
-                pr = rt.exec(commands);
-
-            } catch (IOException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            try {
-                pr.waitFor();
-                statusLbl.setText("Status: Processing " + gameName + " finished.");
-            } catch (InterruptedException ex) {
-                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-        } else // add to batch list...
-        {
-            String[] commands = {"cmd.exe", "/c", "start/wait", workingDir, "batchFiles\\RarTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt};
-            jobQueue.add(commands);
-            jobQueueDescription.add("RAR: " + gameName);
-            this.gameNameTxt.setText("");
-            statusLbl.setText(gameName + " added to queue (Rar).");
-        }
+        String[] commands = {"cmd.exe", "/c", "start/wait", workingDir, "batchFiles\\RarTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, batDir, rarNameNoExt};
+        jobQueue.add(commands);
+        jobQueueDescription.add("RAR: " + gameName);
+        this.gameNameTxt.setText("");
+        setStatusBarText(gameName + " added to queue (Rar).");
 
     }//GEN-LAST:event_startXferBtnActionPerformed
 
-    private void jButton3ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButton3ActionPerformed
+    private void jButton3ActionPerformed() {//GEN-FIRST:event_jButton3ActionPerformed
         try {
             Runtime.getRuntime().exec("cmd.exe /c start http://forums.xbox-scene.com/index.php?showtopic=737562");
         } catch (IOException ex) {
@@ -443,77 +268,63 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         }
     }//GEN-LAST:event_jButton3ActionPerformed
 
-    private void addToQueueBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addToQueueBtnActionPerformed
+    private void addToQueueBtnActionPerformed() {//GEN-FIRST:event_addToQueueBtnActionPerformed
 
         if (!this.gameNameTxt.getText().isEmpty()) {
 
             if (IsoRarSelection == 1) {
-                if (localExtractChkBx.getState() == true) {
-                    RunRarBatchLocal(true, localChooser.getSelectedFile());
+                if (localExtractChkBx.getState()) {
+                    RunRarBatchLocal(localChooser.getSelectedFile());
                 } else {
-                    RunRarBatch(true);
+                    RunRarBatch();
                 }
             } else if (IsoRarSelection == 2) {
-                if (localExtractChkBx.getState() == true) {
-                    IsoToFTPLocal(true, localChooser.getSelectedFile());
+                if (localExtractChkBx.getState()) {
+                    IsoToFTPLocal(localChooser.getSelectedFile());
                 } else {
-                    try {
-                        IsoToFTP(true);
-                    } catch (SocketException ex) {
-                        Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (IOException ex) {
-                        Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    IsoToFTP();
                 }
             } else {
-                statusLbl.setText("Please select a file type.");
+                setStatusBarText("Please select a file type.");
             }
         } else {
-            statusLbl.setText("Please enter a game name");
+            setStatusBarText("Please enter a game name");
         }
-        ;
     }//GEN-LAST:event_addToQueueBtnActionPerformed
 
-    private void startBatchQueueBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_startBatchQueueBtnActionPerformed
+    private void startBatchQueueBtnActionPerformed() {//GEN-FIRST:event_startBatchQueueBtnActionPerformed
 
 
-        Iterator<String[]> iterator = jobQueue.iterator();
-        while (iterator.hasNext()) {
-            processJob(iterator.next());
+        for (String[] aJobQueue : jobQueue) {
+            processJob(aJobQueue);
         }
-        statusLbl.setText("Status: Batch job complete.");
+        setStatusBarText("Status: Batch job complete.");
         jobQueue.clear();
         jobQueueDescription.clear();
 
 
-
-
     }//GEN-LAST:event_startBatchQueueBtnActionPerformed
 
-    private void clearQBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearQBtnActionPerformed
+    private void clearQBtnActionPerformed() {//GEN-FIRST:event_clearQBtnActionPerformed
 
         // TODO add your handling code here:
         jobQueue.clear();
         jobQueueDescription.clear();
         curDir = new File(System.getProperty("user.dir") + "/logs");
-        boolean completed = deleteAll(curDir);
-        statusLbl.setText("Status: Logs and queue cleared.");
+        deleteAll(curDir);
+        setStatusBarText("Status: Logs and queue cleared.");
     }//GEN-LAST:event_clearQBtnActionPerformed
 
-    private void qViewBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_qViewBtnActionPerformed
+    private void qViewBtnActionPerformed() {//GEN-FIRST:event_qViewBtnActionPerformed
 
         JDialog f = new QueueDialog(new JFrame());
         f.setVisible(true);
 
     }//GEN-LAST:event_qViewBtnActionPerformed
 
-    private void localExtractChkBxPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_localExtractChkBxPropertyChange
-        // TODO add your handling code here:
-    }//GEN-LAST:event_localExtractChkBxPropertyChange
+    private void localExtractChkBxItemStateChanged() {//GEN-FIRST:event_localExtractChkBxItemStateChanged
 
-    private void localExtractChkBxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_localExtractChkBxItemStateChanged
-
-        if (localExtractChkBx.getState() == true) {
+        if (localExtractChkBx.getState()) {
             gameDirTxt.setEnabled(false);
             ipAddyTxt.setEnabled(false);
             startXferBtn.setText("Extract To Directory");
@@ -523,42 +334,38 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
             gameDirTxt.setEnabled(true);
             ipAddyTxt.setEnabled(true);
             startXferBtn.setText("Start FTP Transfer");
-            statusLbl.setText("Status: Select an ISO, enter a game name and click Start FTP Transfer");
+            setStatusBarText("Status: Select an ISO, enter a game name and click Start FTP Transfer");
 
         }
     }//GEN-LAST:event_localExtractChkBxItemStateChanged
 
-private void defaultlExtractChkBxItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_defaultlExtractChkBxItemStateChanged
-    if (defaultlExtractChkBx.getState() == true) {
+    private void defaultlExtractChkBxItemStateChanged() {//GEN-FIRST:event_defaultlExtractChkBxItemStateChanged
+        if (defaultlExtractChkBx.getState()) {
 
-        localChooser = new JFileChooser(extractLoc);
-        localChooser.setCurrentDirectory(new java.io.File(extractLoc));
-        gameDirTxt.setEnabled(false);
-        ipAddyTxt.setEnabled(false);
-        startXferBtn.setText("Extract To Directory");
-        statusLbl.setText("Game will be extracted to: " + localChooser.getCurrentDirectory().toString() + "\\" + "\"Game Name\"");
-        localExtractChkBx.setState(false);
+            localChooser = new JFileChooser(extractLoc);
+            localChooser.setCurrentDirectory(new java.io.File(extractLoc));
+            gameDirTxt.setEnabled(false);
+            ipAddyTxt.setEnabled(false);
+            startXferBtn.setText("Extract To Directory");
+            setStatusBarText("Game will be extracted to: " + localChooser.getCurrentDirectory().toString() + "\\" + "\"Game Name\"");
+            localExtractChkBx.setState(false);
 
-    } else {
-        gameDirTxt.setEnabled(true);
-        ipAddyTxt.setEnabled(true);
-        startXferBtn.setText("Start FTP Transfer");
-        statusLbl.setText("Status: Select an ISO, enter a game name and click Start FTP Transfer");
+        } else {
+            gameDirTxt.setEnabled(true);
+            ipAddyTxt.setEnabled(true);
+            startXferBtn.setText("Start FTP Transfer");
+            setStatusBarText("Status: Select an ISO, enter a game name and click Start FTP Transfer");
 
-    }
-}//GEN-LAST:event_defaultlExtractChkBxItemStateChanged
+        }
+    }//GEN-LAST:event_defaultlExtractChkBxItemStateChanged
 
-private void defaultlExtractChkBxPropertyChange(java.beans.PropertyChangeEvent evt) {//GEN-FIRST:event_defaultlExtractChkBxPropertyChange
-// TODO add your handling code here:
-}//GEN-LAST:event_defaultlExtractChkBxPropertyChange
+    private void selectIsoBtnActionPerformed() {//GEN-FIRST:event_selectIsoBtnActionPerformed
 
-private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectIsoBtnActionPerformed
+        selectISO();
+        // TODO add your handling code here:
+    }//GEN-LAST:event_selectIsoBtnActionPerformed
 
-    selectISO();
-    // TODO add your handling code here:
-}//GEN-LAST:event_selectIsoBtnActionPerformed
-
-    public void setExtractDirectory() {
+    void setExtractDirectory() {
 
         localChooser = new JFileChooser(startLoc);
         localChooser.setCurrentDirectory(new java.io.File(extractLoc));
@@ -569,7 +376,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         if (localChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
             System.out.println("getCurrentDirectory(): " + localChooser.getCurrentDirectory());
             System.out.println("getSelectedFile() : " + localChooser.getSelectedFile());
-            statusLbl.setText("Game will be extracted to: " + localChooser.getSelectedFile().toString() + "\\" + "\"Game Name\"");
+            setStatusBarText("Game will be extracted to: " + localChooser.getSelectedFile().toString() + "\\" + "\"Game Name\"");
 
         } else {
             System.out.println("No Selection ");
@@ -579,35 +386,15 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
     }
 
-    public void setChooserDirectory() {
-        localChooser = new JFileChooser(startLoc);
-        localChooser.setCurrentDirectory(new java.io.File(startLoc));
-        localChooser.setDialogTitle("Choose Extraction Location");
-        localChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        localChooser.setAcceptAllFileFilterUsed(false);
-
-        if (localChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            System.out.println("getCurrentDirectory(): " + localChooser.getCurrentDirectory());
-            System.out.println("getSelectedFile() : " + localChooser.getSelectedFile());
-            statusLbl.setText("Game will be extracted to: " + localChooser.getSelectedFile().toString() + "\\" + "\"Game Name\"");
-
-        } else {
-            System.out.println("No Selection ");
-
-        }
-
-
-    }
-
-    public static boolean deleteAll(File dir) {
+    private static boolean deleteAll(File dir) {
         if (!dir.exists()) {
             return true;
         }
         boolean res = true;
         if (dir.isDirectory()) {
             File[] files = dir.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                res &= deleteAll(files[i]);
+            for (File file : files) {
+                res &= deleteAll(file);
             }
         } else {
             res = dir.delete();
@@ -616,8 +403,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     }
 
     private void processJob(String[] command) {
-
-
         Process pr = null;
         // statusLbl.setText("Status: Processing started on " + this.gameNameTxt.getText() + ", see command window for progress.");
         java.lang.Runtime rt = java.lang.Runtime.getRuntime();
@@ -627,15 +412,17 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
         }
         try {
-            pr.waitFor();
-            statusLbl.setText("Status: Processing " + gameName + " finished.");
+            if (pr != null) {
+                pr.waitFor();
+            }
+            setStatusBarText("Status: Processing " + gameName + " finished.");
         } catch (InterruptedException ex) {
             Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
         }
 
     }
 
-    public void setVariables() {
+    void setVariables() {
 
         workingDir = System.getProperty("user.dir");
         batDir = System.getProperty("user.dir");
@@ -644,85 +431,8 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         ipAddy = this.ipAddyTxt.getText();
     }
 
-    private void checkForSpaces() {
-//        if (rarIsoDir.contains(" ")) {
-//            rarIsoDir = "\"" + rarIsoDir + "\"";
-//        }
-//
-//        if (gameName.contains(" ")) {
-//            gameName = "\"" + gameName + "\"";
-//        }
-//        if (batDir.contains(" ")) {
-//            batDir = "\"" + batDir + "\"";
-//        }
-    }
-
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String args[]) {
-        java.awt.EventQueue.invokeLater(new Runnable() {
-
-            public void run() {
-                new RarTo360Form().setVisible(true);
-            }
-        });
-    }
-
-    // CODED
-    public Process doExisoLocal() throws InterruptedException {
+    Process doExisoFTP() {
         try {
-
-            String[] command = new String[3];
-            command[0] = "cmd";
-            command[1] = "/C";
-            command[2] = getExisoCmd();
-
-            String commandString = getExisoCmd();
-            
-            disableButtons();
-            // Process p = Runtime.getRuntime().exec("cmd.exe /c start " + commandString);
-            Process p = Runtime.getRuntime().exec("cmd.exe /c " + commandString);
-
-            String line;
-
-            BufferedReader input =
-                    new BufferedReader(new InputStreamReader(p.getInputStream()));
-            while ((line = input.readLine()) != null) {
-                System.out.println(line);
-            }
-            input.close();
-            
-//            
-//           
-//            BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
-//            BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-            
-            
-
-            String s = null;
-            statusLbl.setText("Processing ISO, please wait...");
-
-            String destFolder = getExtractionPath();
-            long isoSize = getIsoSize(isoPathAndName);
-
-
-            return p;
-
-        } catch (IOException ex) {
-            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-            return null;
-        }
-
-    }
-
-    public Process doExisoFTP() {
-        try {
-
-            String[] command = new String[4];
-            command[0] = "cmd";
-            command[1] = "/C";
-            command[2] = getExisoCmd();
 
             String commandString = getExisoCmd();
             //Process p = Runtime.getRuntime().exec(commandString);
@@ -732,14 +442,12 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             BufferedReader stdInput = new BufferedReader(new InputStreamReader(p.getInputStream()));
             BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
-            String s = null;
-            statusLbl.setText("Processing ISO, please wait...");
-
+            String string;
+            setStatusBarText("Processing ISO, please wait...");
 
 
             //String destFolder = getExtractionPath();
             //long isoSize = getIsoSize(isoPathAndName);
-
 
 
             statusLbl.repaint(100);
@@ -747,21 +455,19 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
             int i = 0;
 
-            while ((s = stdInput.readLine()) != null) {
+            //noinspection UnusedAssignment
+            while ((string = stdInput.readLine()) != null) {
 
                 if (i > 10) {
                     i = 0;
                     //outputLbl.setText(s);
-
-
-
                 } else {
                     i++;
                 }
             }
             System.out.println("Here is the standard error of the command (if any):\n");
-            while ((s = stdError.readLine()) != null) {
-                System.out.println(s);
+            while ((string = stdError.readLine()) != null) {
+                System.out.println(string);
             }
 
 
@@ -774,7 +480,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
     }
 
-    public void enableButtons() {
+    void enableButtons() {
 
 
         selectIsoBtn.setEnabled(true);
@@ -790,10 +496,9 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         //clearQBtn.setEnabled(true);
 
 
-
     }
 
-    public void disableButtons() {
+    void disableButtons() {
 
         selectIsoBtn.setEnabled(false);
         gameNameTxt.setEditable(false);
@@ -811,13 +516,13 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
     }
 
-    private void IsoToFTP(boolean batchBool) throws SocketException, IOException {
+    private void IsoToFTP() {
 
         ipAddy = ipAddyTxt.getText();
         String extractDir = gameDirTxt.getText();
         gameName = gameNameTxt.getText();
         isoName = chooser.getName(chooser.getSelectedFile());
-        IsoNameNoExt = isoName.substring(0, (isoName.length() - 4));
+        isoNameNoExt = isoName.substring(0, (isoName.length() - 4));
         curDir = chooser.getCurrentDirectory();
 
 
@@ -832,9 +537,8 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         }
 
         setIsoPathAndName(isoPathAndName);
-        setExtractionPath(extractTo);
 
-        String extractDirToRename = gameDirTxt.getText() + IsoNameNoExt;
+        String extractDirToRename = gameDirTxt.getText() + isoNameNoExt;
         String extractDirRenameTo = extractTo;
         extractDirRenameTo = extractDirRenameTo.replaceAll("\"", "");
 
@@ -849,7 +553,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
         final String extractDirToRenameFinal = extractDirToRename;
         final String extractDirRenameToFinal = extractDirRenameTo;
-
 
 
         // Create Directory on 360...
@@ -873,7 +576,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
             protected void done() {
                 try {
 
-                    statusLbl.setText("Status: Ready.");
+                    setStatusBarText("Status: Ready.");
                     //pctComplete.setText("Process Complete.");
                     //outputLbl.setText("");
                     FTPClient ftp = new FTPClient();
@@ -885,51 +588,15 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
                     enableButtons();
 
 
-
-
                 } catch (Exception ignore) {
                 }
             }
         }
 
         (new IsoTo360Class()).execute();
-
-
-
-
-
-
-//            Process pr = null;
-//
-//            java.lang.Runtime rt = java.lang.Runtime.getRuntime();
-//            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir};
-//            try {
-//                pr = rt.exec(commands);
-//
-//            } catch (IOException ex) {
-//                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//            try {
-//                pr.waitFor();
-//                statusLbl.setText("Status: Processing " + gameName + " finished.");
-//            } catch (InterruptedException ex) {
-//                Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-//        } else {
-//            
-// 
-//            
-//            String[] commands = {"cmd", "/c", "start/wait", workingDir, "batchFiles\\IsoTo360.cmd", gameDir, gameName, ipAddy, rarIsoDir, isoName, IsoNameNoExt, batDir};
-//            jobQueue.add(commands);
-//            jobQueueDescription.add("ISO: " + gameName);
-//            this.gameNameTxt.setText("");
-//            statusLbl.setText(gameName + " added to queue (ISO).");
-//        }
-
     }
 
-    public void IsoToDisc(String extractDir, String gameName, String isoDir, String isoName, String workingDir) throws IOException {
-
+    void IsoToDisc(String extractDir, String gameName, String isoDir, String isoName) throws IOException {
 
 
         String extractTo = extractDir + "\\" + gameName;
@@ -943,11 +610,8 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         }
 
         setIsoPathAndName(isoPathAndName);
-        setExtractionPath(extractTo);
 
         makeExtractDir(extractTo);
-
-
 
         //String commandString = workingDir + "\\exiso.exe -d " + extractTo + " -s " + isoPathAndName;
         String commandString = "exiso.exe -d " + extractTo + " -s " + isoPathAndName;
@@ -956,7 +620,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         new IsoExtractWorker(progressUpdateListener, getExisoCmd()).execute();
     }
 
-    public void makeExtractDir(String extractDir) throws IOException {
+    void makeExtractDir(String extractDir) throws IOException {
 
 
         String[] command = new String[3];
@@ -971,7 +635,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         BufferedReader stdError = new BufferedReader(new InputStreamReader(p.getErrorStream()));
 
 
-        String s = null;
+        String s;
         System.out.println("Here is the standard output of the command:\n");
         while ((s = stdInput.readLine()) != null) {
             //txtOutputLabel.setText(s);
@@ -989,124 +653,49 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     }
 
     // Getters and Setters
-    public void setIsoPathAndName(String isoPath) {
+    void setIsoPathAndName(String isoPath) {
         isoPathAndName = isoPath;
     }
 
-    public String getIsoPathAndName() {
-        return isoPathAndName;
-    }
-
-    public long getIsoSize(String pathAndName) {
-        long i = 0;
-        File file = new File(pathAndName);
-        i = file.length();
-
-        return i;
-    }
-
-    public long getFolderSize(String folderName) {
-
-        long size = FileUtils.sizeOfDirectory(new File(folderName));
-
-        return size;
-
-
-    }
-
-    public void setCmdString(String[] cmd) {
-        cmdString = cmd;
-    }
-
-    public String[] getCmdString() {
-        return cmdString;
-    }
-
-    public void setExisoCmd(String exCmd) {
+    void setExisoCmd(String exCmd) {
         exisoCmd = exCmd;
     }
 
-    public String getExisoCmd() {
+    String getExisoCmd() {
         return exisoCmd;
     }
 
-    public void setExtractionPath(String path) {
-        extractionPath = path;
-    }
-
-    public String getExtractionPath() {
-        return extractionPath;
-    }
-
-    // MORE CUTPASTE CODE
-    class ExtensionFileFilter {
-
-        String description;
-        String extensions[];
-
-        public ExtensionFileFilter(String description, String extension) {
-            this(description, new String[]{extension});
-        }
-
-        public ExtensionFileFilter(String description, String extensions[]) {
-            if (description == null) {
-                this.description = extensions[0];
-            } else {
-                this.description = description;
-            }
-            this.extensions = (String[]) extensions.clone();
-            toLower(this.extensions);
-        }
-
-        private void toLower(String array[]) {
-            for (int i = 0, n = array.length; i < n; i++) {
-                array[i] = array[i].toLowerCase();
-            }
-        }
-
-        public String getDescription() {
-            return description;
-        }
-    }
-	
-    
-    // Output Exiso to Text:
-    
     private void updateTextArea(final String text) {
-    SwingUtilities.invokeLater(new Runnable() {
-      public void run() {
         jTextOutput.append(text);
-      }
-    });
-  }
+    }
 
-	
+
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jPanel2 = new javax.swing.JPanel();
+        JPanel jPanel2 = new JPanel();
         ipAddyTxt = new javax.swing.JTextField();
-        jLabel1 = new javax.swing.JLabel();
+        JLabel jLabel1 = new JLabel();
         gameNameTxt = new javax.swing.JTextField();
-        jLabel6 = new javax.swing.JLabel();
-        jLabel4 = new javax.swing.JLabel();
+        JLabel jLabel6 = new JLabel();
+        JLabel jLabel4 = new JLabel();
         gameDirTxt = new javax.swing.JTextField();
         selectIsoBtn = new javax.swing.JButton();
         defaultlExtractChkBx = new java.awt.Checkbox();
         localExtractChkBx = new java.awt.Checkbox();
         statusLbl = new javax.swing.JLabel();
-        jLabel3 = new javax.swing.JLabel();
-        percentLbl = new javax.swing.JLabel();
-        pctLbl = new javax.swing.JLabel();
-        jPanel3 = new javax.swing.JPanel();
+        JLabel jLabel3 = new JLabel();
+        JLabel percentLbl = new JLabel();
+        JLabel pctLbl = new JLabel();
+        JPanel jPanel3 = new JPanel();
         startXferBtn = new javax.swing.JButton();
         clearQBtn = new javax.swing.JButton();
         qViewBtn = new javax.swing.JButton();
         addToQueueBtn = new javax.swing.JButton();
         startBatchQueueBtn = new javax.swing.JButton();
-        jButton3 = new javax.swing.JButton();
-        jScrollPane1 = new javax.swing.JScrollPane();
+        JButton jButton3 = new JButton();
+        JScrollPane jScrollPane1 = new JScrollPane();
         jTextOutput = new javax.swing.JTextArea();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -1120,7 +709,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
         ipAddyTxt.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                ipAddyTxtActionPerformed(evt);
             }
         });
 
@@ -1128,7 +716,6 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
         gameNameTxt.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                gameNameTxtActionPerformed(evt);
             }
         });
 
@@ -1138,14 +725,13 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
 
         gameDirTxt.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                gameDirTxtActionPerformed(evt);
             }
         });
 
         selectIsoBtn.setText("Select ISO");
         selectIsoBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                selectIsoBtnActionPerformed(evt);
+                selectIsoBtnActionPerformed();
             }
         });
 
@@ -1153,12 +739,11 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         defaultlExtractChkBx.setLabel("Extract to default directory?");
         defaultlExtractChkBx.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                defaultlExtractChkBxItemStateChanged(evt);
+                defaultlExtractChkBxItemStateChanged();
             }
         });
         defaultlExtractChkBx.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
             public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                defaultlExtractChkBxPropertyChange(evt);
             }
         });
 
@@ -1166,64 +751,64 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         localExtractChkBx.setLabel("Extract to local directory?");
         localExtractChkBx.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                localExtractChkBxItemStateChanged(evt);
+                localExtractChkBxItemStateChanged();
             }
         });
         localExtractChkBx.addPropertyChangeListener(new java.beans.PropertyChangeListener() {
             public void propertyChange(java.beans.PropertyChangeEvent evt) {
-                localExtractChkBxPropertyChange(evt);
             }
         });
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
         jPanel2.setLayout(jPanel2Layout);
         jPanel2Layout.setHorizontalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 111, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(gameDirTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 159, Short.MAX_VALUE)
-                    .addComponent(gameNameTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 159, Short.MAX_VALUE)
-                    .addComponent(ipAddyTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 159, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(localExtractChkBx, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(selectIsoBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(defaultlExtractChkBx, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addContainerGap())
+                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(jLabel6, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jLabel4, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jLabel1, javax.swing.GroupLayout.DEFAULT_SIZE, 111, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(gameDirTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 159, Short.MAX_VALUE)
+                                        .addComponent(gameNameTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 159, Short.MAX_VALUE)
+                                        .addComponent(ipAddyTxt, javax.swing.GroupLayout.DEFAULT_SIZE, 159, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(localExtractChkBx, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(selectIsoBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 101, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(defaultlExtractChkBx, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addContainerGap())
         );
 
-        jPanel2Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {gameDirTxt, gameNameTxt});
+        jPanel2Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, gameDirTxt, gameNameTxt);
 
         jPanel2Layout.setVerticalGroup(
-            jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel2Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(gameNameTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(selectIsoBtn))
-                .addGap(10, 10, 10)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(gameDirTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(defaultlExtractChkBx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(ipAddyTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(localExtractChkBx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(20, Short.MAX_VALUE))
+                jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel2Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(jLabel1, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(gameNameTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(selectIsoBtn))
+                                .addGap(10, 10, 10)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(jLabel4, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(gameDirTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(defaultlExtractChkBx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                                .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addGroup(jPanel2Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(jLabel6, javax.swing.GroupLayout.PREFERRED_SIZE, 17, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(ipAddyTxt, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addComponent(localExtractChkBx, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(20, Short.MAX_VALUE))
         );
 
-        statusLbl.setText("Status: Ready... Please select an ISO to extract or transfer");
+        String text = "Status: Ready... Please select an ISO to extract or transfer";
+        setStatusBarText(text);
 
         jPanel3.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.RAISED));
 
@@ -1231,7 +816,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         startXferBtn.setToolTipText("Select directory containing your game files");
         startXferBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                startXferBtnActionPerformed(evt);
+                startXferBtnActionPerformed();
             }
         });
 
@@ -1240,7 +825,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         clearQBtn.setEnabled(false);
         clearQBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                clearQBtnActionPerformed(evt);
+                clearQBtnActionPerformed();
             }
         });
 
@@ -1249,7 +834,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         qViewBtn.setEnabled(false);
         qViewBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                qViewBtnActionPerformed(evt);
+                qViewBtnActionPerformed();
             }
         });
 
@@ -1257,7 +842,7 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         addToQueueBtn.setEnabled(false);
         addToQueueBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                addToQueueBtnActionPerformed(evt);
+                addToQueueBtnActionPerformed();
             }
         });
 
@@ -1265,64 +850,64 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         startBatchQueueBtn.setEnabled(false);
         startBatchQueueBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                startBatchQueueBtnActionPerformed(evt);
+                startBatchQueueBtnActionPerformed();
             }
         });
 
         jButton3.setText("Visit Support Page");
         jButton3.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButton3ActionPerformed(evt);
+                jButton3ActionPerformed();
             }
         });
 
         javax.swing.GroupLayout jPanel3Layout = new javax.swing.GroupLayout(jPanel3);
         jPanel3.setLayout(jPanel3Layout);
         jPanel3Layout.setHorizontalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(startXferBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 145, Short.MAX_VALUE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(addToQueueBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(jButton3)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(clearQBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addComponent(qViewBtn)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(startBatchQueueBtn)))
-                .addContainerGap())
+                jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                                .addComponent(startXferBtn, javax.swing.GroupLayout.DEFAULT_SIZE, 145, Short.MAX_VALUE)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(addToQueueBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                                .addComponent(jButton3)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                .addComponent(clearQBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 107, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                                .addComponent(qViewBtn)
+                                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                                .addComponent(startBatchQueueBtn)))
+                                .addContainerGap())
         );
 
-        jPanel3Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, new java.awt.Component[] {addToQueueBtn, clearQBtn, jButton3, qViewBtn, startBatchQueueBtn, startXferBtn});
+        jPanel3Layout.linkSize(javax.swing.SwingConstants.HORIZONTAL, addToQueueBtn, clearQBtn, jButton3, qViewBtn, startBatchQueueBtn, startXferBtn);
 
         jPanel3Layout.setVerticalGroup(
-            jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel3Layout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(jPanel3Layout.createSequentialGroup()
-                        .addGap(35, 35, 35)
-                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(startBatchQueueBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(qViewBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                    .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                        .addComponent(addToQueueBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addComponent(startXferBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(clearQBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addContainerGap(7, Short.MAX_VALUE))
+                jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                .addContainerGap()
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(jPanel3Layout.createSequentialGroup()
+                                                .addGap(35, 35, 35)
+                                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                        .addComponent(startBatchQueueBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                        .addComponent(qViewBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                        .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                                .addComponent(addToQueueBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                .addComponent(startXferBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(jPanel3Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                        .addComponent(clearQBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(jButton3, javax.swing.GroupLayout.PREFERRED_SIZE, 29, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addContainerGap(7, Short.MAX_VALUE))
         );
 
-        jPanel3Layout.linkSize(javax.swing.SwingConstants.VERTICAL, new java.awt.Component[] {addToQueueBtn, clearQBtn, jButton3, qViewBtn, startBatchQueueBtn, startXferBtn});
+        jPanel3Layout.linkSize(javax.swing.SwingConstants.VERTICAL, addToQueueBtn, clearQBtn, jButton3, qViewBtn, startBatchQueueBtn, startXferBtn);
 
-        jTextOutput.setBackground(new java.awt.Color(242, 242, 242));
+        jTextOutput.setBackground(new Color(242, 242, 242));
         jTextOutput.setColumns(20);
         jTextOutput.setEditable(false);
         jTextOutput.setFont(new java.awt.Font("Monospaced", 0, 11)); // NOI18N
@@ -1334,47 +919,55 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 804, Short.MAX_VALUE))
-                    .addComponent(pctLbl, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(percentLbl, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addContainerGap()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(statusLbl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(6, 6, 6)
-                                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
-                .addContainerGap())
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                                .addContainerGap()
+                                                .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 804, Short.MAX_VALUE))
+                                        .addComponent(pctLbl, javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(percentLbl, javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(jLabel3, javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
+                                                .addContainerGap()
+                                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                                        .addComponent(statusLbl, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(jPanel2, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                                                .addGap(6, 6, 6)
+                                                                .addComponent(jPanel3, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                                .addContainerGap())
         );
         layout.setVerticalGroup(
-            layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(pctLbl)
-                    .addComponent(percentLbl)
-                    .addComponent(jLabel3))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(statusLbl, javax.swing.GroupLayout.PREFERRED_SIZE, 21, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(18, 18, 18)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(jPanel3, 0, 121, Short.MAX_VALUE)
-                    .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
-                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap())
+                layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                        .addComponent(pctLbl)
+                                        .addComponent(percentLbl)
+                                        .addComponent(jLabel3))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(statusLbl, javax.swing.GroupLayout.PREFERRED_SIZE, 21, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(18, 18, 18)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                        .addComponent(jPanel3, 0, 121, Short.MAX_VALUE)
+                                        .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 18, Short.MAX_VALUE)
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 154, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
-	
-	
+
+    /**
+     * Sets the text on the status bar.
+     *
+     * @param text the text to set.
+     */
+    private void setStatusBarText(String text) {
+        statusLbl.setText(text);
+    }
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton addToQueueBtn;
     private javax.swing.JButton clearQBtn;
@@ -1382,18 +975,8 @@ private void selectIsoBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-
     private javax.swing.JTextField gameDirTxt;
     private javax.swing.JTextField gameNameTxt;
     private javax.swing.JTextField ipAddyTxt;
-    private javax.swing.JButton jButton3;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JLabel jLabel3;
-    private javax.swing.JLabel jLabel4;
-    private javax.swing.JLabel jLabel6;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTextArea jTextOutput;
     private java.awt.Checkbox localExtractChkBx;
-    private javax.swing.JLabel pctLbl;
-    private javax.swing.JLabel percentLbl;
     private javax.swing.JButton qViewBtn;
     private javax.swing.JButton selectIsoBtn;
     private javax.swing.JButton startBatchQueueBtn;
