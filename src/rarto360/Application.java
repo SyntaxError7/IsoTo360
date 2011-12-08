@@ -5,12 +5,13 @@
 
 package rarto360;
 
+import org.apache.log4j.Logger;
+
 import javax.swing.*;
 import java.util.Locale;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Application {
+    private static final Logger logger = Logger.getLogger(Application.class);
 
     private static Application ourInstance = new Application();
     private Locale locale = new Locale("en");
@@ -44,7 +45,7 @@ public class Application {
             RarTo360Form form = new RarTo360Form();
             form.setVisible(true);
         } catch (Exception ex) {
-            Logger.getLogger(Application.class.getName()).log(Level.SEVERE, null, ex);
+            logger.fatal("Exception in application startup!", ex);
         }
     }
 

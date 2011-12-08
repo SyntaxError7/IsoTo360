@@ -1,6 +1,8 @@
 package rarto360;
 
 
+import org.apache.log4j.Logger;
+
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -16,7 +18,7 @@ import java.util.ResourceBundle;
  * @since Mar 23, 2010, 12:10:19 AM
  */
 public class LocalizeFromResource {
-    //    private static Logger logger = Logger.getLogger(LocalizeFromResource.class);
+    private static Logger logger = Logger.getLogger(LocalizeFromResource.class);
     private static Map<Class, Map<String, String>> map = new HashMap<Class, Map<String, String>>();
 
 
@@ -48,7 +50,7 @@ public class LocalizeFromResource {
             put(classToLocalize, key, value);
             return value;
         } catch (Exception ignored) {
-//            logger.error("key not found: " + key + " in classpath: " + classToLocalize);
+            logger.error("key not found: " + key + " in classpath: " + classToLocalize);
             return key;
         }
     }

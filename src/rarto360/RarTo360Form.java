@@ -27,6 +27,7 @@
 package rarto360;
 
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.log4j.Logger;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -38,10 +39,9 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
+    private static final Logger logger = Logger.getLogger(RarTo360Form.class);
 
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     private static final List<String> jobQueueDescription = new ArrayList<String>();
@@ -216,7 +216,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         try {
             IsoToDisc(dirToExt, gameName, rarIsoDir, isoName);
         } catch (IOException ex) {
-            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("An error occurred", ex);
         }
     }
 
@@ -264,7 +264,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         try {
             Runtime.getRuntime().exec("cmd.exe /c start http://forums.xbox-scene.com/index.php?showtopic=737562");
         } catch (IOException ex) {
-            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("An error occurred", ex);
         }
     }//GEN-LAST:event_jButton3ActionPerformed
 
@@ -409,7 +409,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         try {
             pr = rt.exec(command);
         } catch (IOException ex) {
-            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("An error occurred", ex);
         }
         try {
             if (pr != null) {
@@ -417,7 +417,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
             }
             setStatusBarText("Status: Processing " + gameName + " finished.");
         } catch (InterruptedException ex) {
-            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("An error occurred", ex);
         }
 
     }
@@ -474,7 +474,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
             return p;
 
         } catch (IOException ex) {
-            Logger.getLogger(RarTo360Form.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("An error occurred", ex);
             return null;
         }
 
