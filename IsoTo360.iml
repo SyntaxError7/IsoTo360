@@ -11,6 +11,7 @@
     <orderEntry type="library" name="commons-net-3.0.1" level="project" />
     <orderEntry type="library" name="beansbinding-1.2.1" level="project" />
     <orderEntry type="library" name="AbsoluteLayout" level="project" />
+    <orderEntry type="library" name="log4j-1.2.16" level="project" />
   </component>
 </module>
 
