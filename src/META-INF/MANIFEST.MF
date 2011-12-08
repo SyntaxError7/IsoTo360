@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Class-Path: AbsoluteLayout.jar beansbinding-1.2.1.jar commons-io-2.1.j
+ ar commons-net-3.0.1.jar .
+Main-Class: rarto360.Application
+

@@ -1,0 +1,11 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="IsoTo360">
+    <output-path>$PROJECT_DIR$/dist</output-path>
+    <root id="archive" name="IsoTo360.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="IsoTo360" />
+    </root>
+  </artifact>
+</component>
