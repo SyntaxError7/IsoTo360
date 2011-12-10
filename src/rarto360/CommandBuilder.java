@@ -9,7 +9,7 @@ package rarto360;
 public class CommandBuilder {
     private String parameter;
 
-    public CommandBuilder(String... parameters) {
+    public CommandBuilder(Iterable<String> parameters) {
 
         StringBuilder builder = new StringBuilder();
         for (String p : parameters) {

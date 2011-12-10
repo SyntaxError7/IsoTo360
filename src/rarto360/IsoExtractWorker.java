@@ -2,6 +2,8 @@ package rarto360;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A worker to replace the old worker in {@link RarTo360Form}.
@@ -13,11 +15,17 @@ import java.io.InputStreamReader;
  *         created 23-11-11, 20:23
  */
 public class IsoExtractWorker extends ExtendedSwingWorker {
-    private String[] parameters;
+    private List<String> parameters = new ArrayList<String>();
 
-    protected IsoExtractWorker(ProgressUpdateListener progressUpdateListener, String... parameters) {
+
+    protected IsoExtractWorker(ProgressUpdateListener progressUpdateListener, String outputDirectory, String isoPath) {
         super(progressUpdateListener);
-        this.parameters = parameters;
+
+        parameters.add("exiso.exe");
+        parameters.add("-d");
+        parameters.add(outputDirectory);
+        parameters.add("-s");
+        parameters.add(isoPath);
     }
 
 

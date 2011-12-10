@@ -542,58 +542,16 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         String extractDirRenameTo = extractTo;
         extractDirRenameTo = extractDirRenameTo.replaceAll("\"", "");
 
-        disableButtons();
-
-//        if (extractDirToRename.contains(" ")) {
-//            extractDirToRename = "\"" + extractDirToRename + "\"";
-//        }
-//        if (extractDirRenameTo.contains(" ")) {
-//            extractDirRenameTo = "\"" + extractDirRenameTo + "\"";
-//        }        
-
-        final String extractDirToRenameFinal = extractDirToRename;
-        final String extractDirRenameToFinal = extractDirRenameTo;
-
-
-        // Create Directory on 360...
-//        FTPClient ftp = new FTPClient();
-//        ftp.connect(ipAddy);
-//        ftp.login("xbox","xbox");
-//        ftp.mkd(extractDirToRename);
-//        ftp.disconnect();
-
         setExisoCmd("exiso -d " + extractDir + " -f " + ipAddy + " -s " + isoPathAndName);
 
-        class IsoTo360Class extends SwingWorker<Process, Object> {
-
-            @Override
-            public Process doInBackground() {
-                return doExisoFTP();
-
-            }
-
-            @Override
-            protected void done() {
-                try {
-
-                    setStatusBarText("Status: Ready.");
-                    //pctComplete.setText("Process Complete.");
-                    //outputLbl.setText("");
-                    FTPClient ftp = new FTPClient();
-                    ftp.connect(ipAddy);
-                    ftp.login("xbox", "xbox");
-                    ftp.rename(extractDirToRenameFinal.toLowerCase(), extractDirRenameToFinal.toLowerCase());
-                    ftp.disconnect();
-
-                    enableButtons();
-
-
-                } catch (Exception ignore) {
-                }
-            }
-        }
-
-        (new IsoTo360Class()).execute();
+        IsoFtpWorker worker = new IsoFtpWorker(
+                progressUpdateListener,
+                ipAddy,
+                extractDirToRename,
+                extractDirRenameTo,
+                isoPathAndName,
+                extractDir);
+        worker.execute();
     }
 
     void IsoToDisc(String extractDir, String gameName, String isoDir, String isoName) throws IOException {
@@ -617,7 +575,7 @@ public class RarTo360Form extends javax.swing.JFrame implements ActionListener {
         String commandString = "exiso.exe -d " + extractTo + " -s " + isoPathAndName;
         setExisoCmd(commandString);
 
-        new IsoExtractWorker(progressUpdateListener, getExisoCmd()).execute();
+        new IsoExtractWorker(progressUpdateListener, extractTo, isoPathAndName).execute();
     }
 
     void makeExtractDir(String extractDir) throws IOException {
